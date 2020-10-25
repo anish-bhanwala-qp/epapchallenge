@@ -1,0 +1,9 @@
+.thumbnail {
+    height: 40px;
+    padding: 5px 5px 5px 100px;    
+}
+
+.thumbnail img {
+    height: 40px;
+    width: auto;
+}

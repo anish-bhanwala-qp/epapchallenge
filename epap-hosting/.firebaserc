@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "epap-fileupload"
+  },
+  "targets": {
+    "epap-fileupload": {
+      "hosting": {
+        "epap-admin": [
+          "epap-admin"
+        ],
+        "epap-client": [
+          "epap-client"
+        ]
+      }
+    }
+  }
+}
