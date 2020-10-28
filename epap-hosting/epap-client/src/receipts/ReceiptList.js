@@ -11,12 +11,12 @@ export class ReceiptList extends React.Component {
       error: "",
     };
 
-    this.receiptsRef = firestoreDb.collection("receipts");
+    this.unsubscribeReceipts = () => {};
     this.storeIconRef = realtimeDb.ref("storeIcons");
   }
 
   componentDidMount() {
-    this.receiptsRef.onSnapshot(
+    this.unsubscribeReceipts = firestoreDb.collection("receipts").onSnapshot(
       (querySnapshot) => {
         console.log("Query snapshot called");
         const rs = [];
@@ -52,7 +52,7 @@ export class ReceiptList extends React.Component {
 
   componentWillUnmount() {
     this.storeIconRef.off();
-    this.receiptsRef.off();
+    this.unsubscribeReceipts();
   }
 
   render() {
