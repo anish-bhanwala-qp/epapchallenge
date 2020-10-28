@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../firebaseConfig";
+import { firestoreDb } from "../firebaseConfig";
 import styles from "./StoreDropdown.module.css";
 
 export const StoreDropdown = (props) => {
@@ -16,7 +16,8 @@ export const StoreDropdown = (props) => {
   };
 
   useEffect(() => {
-    db.collection("stores")
+    firestoreDb
+      .collection("stores")
       .get()
       .then(function (querySnapshot) {
         const stores = [];

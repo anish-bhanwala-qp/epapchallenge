@@ -1,37 +1,78 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { ReceiptRow } from "./ReceiptRow";
-import { db } from "../firebaseConfig";
+import { firestoreDb, realtimeDb } from "../firebaseConfig";
 
-export const ReceiptList = () => {
-  const [receipts, setReceipts] = useState([]);
-  const [error, setError] = useState("");
+export class ReceiptList extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      receipts: [],
+      storeIcons: {},
+      error: "",
+    };
 
-  useEffect(() => {
-    db.collection("receipts").onSnapshot(
-      function (querySnapshot) {
+    this.receiptsRef = firestoreDb.collection("receipts");
+    this.storeIconRef = realtimeDb.ref("storeIcons");
+  }
+
+  componentDidMount() {
+    this.receiptsRef.onSnapshot(
+      (querySnapshot) => {
         console.log("Query snapshot called");
         const rs = [];
         querySnapshot.forEach(function (doc) {
           rs.push(doc);
         });
 
-        setReceipts(rs);
+        this.setState({ receipts: rs });
       },
       (e) => {
-        setError(e.message);
+        this.setState({ error: e.message });
       }
     );
-  }, []);
 
-  if (error) {
-    return <div>{`Error fetching receipts: ${error}`}</div>;
+    this.storeIconRef.once("value", (snapshot) => {
+      console.log("storeIcons received", snapshot.val());
+      this.setState({ storeIcons: snapshot.val() });
+    });
+
+    const addNewStoreIcon = (snapshot) => {
+      console.log("Store icon added", snapshot.val(), snapshot.key);
+      const newStoreIcon = {};
+      newStoreIcon[snapshot.key] = snapshot.val();
+      this.setState({
+        storeIcons: {
+          ...this.state.storeIcons,
+          [snapshot.key]: snapshot.val(),
+        },
+      });
+    };
+    this.storeIconRef.on("child_changed", addNewStoreIcon);
   }
 
-  return (
-    <div>
-      {receipts.map((doc) => {
-        return <ReceiptRow doc={doc} key={doc.id} />;
-      })}
-    </div>
-  );
-};
+  componentWillUnmount() {
+    this.storeIconRef.off();
+    this.receiptsRef.off();
+  }
+
+  render() {
+    const { storeIcons, receipts, error } = this.state;
+    if (error) {
+      return <div>{`Error fetching receipts: ${error}`}</div>;
+    }
+
+    return (
+      <div>
+        {receipts.map((doc) => {
+          return (
+            <ReceiptRow
+              storeIconUrl={storeIcons[doc.data().storeName]}
+              doc={doc}
+              key={doc.id}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+}

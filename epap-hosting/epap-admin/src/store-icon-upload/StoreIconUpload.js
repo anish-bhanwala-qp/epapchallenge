@@ -10,23 +10,23 @@ export class StoreIconUpload extends React.Component {
     super(props);
     this.state = {
       status: "",
-      store: "-1",
+      storeName: "",
     };
     this.fileInput = React.createRef(null);
   }
 
   resetForm = () => {
-    this.setState({ store: "-1" });
+    this.setState({ storeName: "" });
     this.fileInput.current.value = "";
   };
 
-  handleStoreChange = (store) => {
-    this.setState({ store });
+  handleStoreChange = (e) => {
+    this.setState({ storeName: e.target.value });
   };
 
   handleSubmit = (event) => {
     event.preventDefault();
-    if (this.state.store == null || this.state.store === "-1") {
+    if (!this.state.storeName) {
       alert("Please select a store.");
     } else if (
       !this.fileInput.current.files ||
@@ -43,25 +43,26 @@ export class StoreIconUpload extends React.Component {
   };
 
   handleUpload = () => {
-    const { store } = this.state;
+    const { storeName } = this.state;
     const file = this.fileInput.current.files[0];
-    new UploadStoreIconService(store, file, this.setStatus)
+    new UploadStoreIconService(storeName, file, this.setStatus)
       .upload()
       .finally(this.resetForm);
   };
 
   render() {
-    const { status, store } = this.state;
+    const { status, storeName } = this.state;
     return (
       <form onSubmit={this.handleSubmit}>
         {status && <div className={styles.row}>{"status: " + status}</div>}
         <div className={styles.row}>
           <label>
-            Select Store:
-            <StoreDropdown
-              value={store && store.id}
-              handleChange={this.handleStoreChange}
-            />
+            Store name:
+            <input
+              type="text"
+              value={storeName}
+              onChange={this.handleStoreChange}
+            ></input>
           </label>
         </div>
         <div className={styles.row}>

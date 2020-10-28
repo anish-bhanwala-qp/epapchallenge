@@ -9,10 +9,10 @@ export const ReceiptRow = (props) => {
       <li>
         <label>Store</label> {data.storeName}
       </li>
-      {data.storeIconUrl && (
+      {props.storeIconUrl && (
         <li>
           <img
-            src={data.storeIconUrl}
+            src={props.storeIconUrl}
             alt={data.storeName}
             width="50"
             height="auto"

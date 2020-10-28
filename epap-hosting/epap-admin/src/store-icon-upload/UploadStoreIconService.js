@@ -1,23 +1,23 @@
 import firebase from "firebase/app";
-import { db } from "../firebaseConfig";
+import { firestoreDb, realtimeDb } from "../firebaseConfig";
 
 export class UploadStoreIconService {
-  constructor(store, file, statusCallback) {
-    this.store = store;
+  constructor(storeName, file, statusCallback) {
+    this.storeName = storeName;
     this.file = file;
     this.statusCallback = statusCallback;
   }
 
   upload = () => {
-    const { store, file, statusCallback } = this;
+    const { storeName, file, statusCallback } = this;
 
     statusCallback("File upload started...");
     // Create a root reference
     const storageRef = firebase.storage().ref();
+
     const metadata = {
       customMetadata: {
-        storeId: store.id,
-        storeName: store.get("name"),
+        storeName,
       },
     };
     const uploadTask = storageRef
@@ -34,7 +34,12 @@ export class UploadStoreIconService {
         },
         () => {
           statusCallback("File uploaded. Updating store database...");
-          this.syncIconUrlInStoreAndReceipts(uploadTask, resolve, reject);
+          this.syncIconUrlInStoreAndReceipts(
+            uploadTask,
+            storeName,
+            resolve,
+            reject
+          );
         }
       );
     });
@@ -47,15 +52,25 @@ export class UploadStoreIconService {
     this.statusCallback("Upload is " + progress + "% done.");
   };
 
-  syncIconUrlInStoreAndReceipts = async (uploadTask, resolve, reject) => {
+  syncIconUrlInStoreAndReceipts = async (
+    uploadTask,
+    storeName,
+    resolve,
+    reject
+  ) => {
     try {
       this.statusCallback(`File uploaded.`);
       const iconUrl = await uploadTask.snapshot.ref.getDownloadURL();
+      const iconRef = realtimeDb.ref(`storeIcons`);
+      const data = {};
+      data[`${storeName}`] = iconUrl;
+      iconRef
+        .update(data)
+        .catch((err) => console.log("store icon update failed", err));
 
-      this.updateStoreIconUrl(iconUrl);
-      this.statusCallback(`Updated store icon.`);
-
-      this.updateReceiptsStoreImageUrl(iconUrl);
+      // this.updateStoreIconUrl(iconUrl);
+      // this.statusCallback(`Updated store icon.`);
+      // this.updateReceiptsStoreImageUrl(iconUrl);
 
       this.statusCallback(`Success! Download URL: ${iconUrl}.`);
 
@@ -67,7 +82,7 @@ export class UploadStoreIconService {
   };
 
   updateStoreIconUrl = async (iconUrl) => {
-    await this.store.ref.set(
+    await this.storeName.ref.set(
       {
         iconUrl,
       },
@@ -77,12 +92,12 @@ export class UploadStoreIconService {
 
   updateReceiptsStoreImageUrl = async (iconUrl) => {
     try {
-      const receipts = await db
+      const receipts = await firestoreDb
         .collection("receipts")
-        .where("storeId", "==", this.store.ref)
+        .where("storeId", "==", this.storeName.ref)
         .get();
 
-      const batch = db.batch();
+      const batch = firestoreDb.batch();
 
       receipts.docs.forEach((doc) => {
         batch.update(doc.ref, { storeIconUrl: iconUrl });
